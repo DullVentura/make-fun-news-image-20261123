@@ -4,20 +4,26 @@
 [![rank](https://make.fun/badge/news-image-20261123/DullVentura/make-fun-news-image-20261123/rank.svg)](https://make.fun/bounty/news-image-20261123)
 [![reward](https://make.fun/badge/news-image-20261123/DullVentura/make-fun-news-image-20261123/reward.svg)](https://make.fun/bounty/news-image-20261123)
 
-# news-image-20261123 — World News front page, Sunday 23 November 2026
+## One image, 23 November 2026
 
-A 1024x1024 newspaper front page summing up the day's world news:
-6 lead stories in a 3x2 grid plus 4 ALSO briefs per panel — 30 stories
-in total. Leads: COP31 collapses, NATO Council meets Monday, Iran
-strikes US base in Bahrain, Java factory fire (24 body bags),
-India 720/9d, 14 missing in Kyiv. All stories verified against
-news sources dated 22-23 November 2026 (see
-`news-image-20261123-research.md` beside the entry).
+This entry is a newspaper front page for Sunday 23 November 2026,
+rendered as a single 1024x1024 PNG. Six lead stories fill a 3x2
+grid — COP31 collapses, NATO Council meets Monday, Iran strikes a
+US base in Bahrain, a Java factory fire with 24 body bags, India
+720/9d, and 14 missing in Kyiv — and each of the six panels carries
+four short ALSO briefs, for 30 stories in total. Every story was
+checked against news sources dated 22–23 November 2026; the
+research notes sit beside this entry in
+`news-image-20261123-research.md`.
 
-`main.py` (Python 3.13, standard library only) copies `art.png` to
-`$MAKEFUN_OUTPUT_DIR/entry.png` (default `/output/entry.png`),
-validating PNG magic, the 1 MiB size limit and the 1024x1024 limit,
-and verifying the written file's SHA-256 matches. No network, no
-clock, no randomness — two runs write identical bytes.
+## How the entry works
+
+`main.py` (Python 3.13, standard library only) ships the finished
+page, `art.png`, as the competition image: it checks the PNG magic,
+the 1 MiB size cap and the 1024x1024 cap, writes the bytes to
+`$MAKEFUN_OUTPUT_DIR/entry.png` (default `/output/entry.png`), then
+reads the copy back and requires its SHA-256 to match the source.
+No network, no clock, no randomness — run it twice and the bytes
+are identical.
 
 License: MIT.
