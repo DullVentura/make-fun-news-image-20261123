@@ -1,71 +1,68 @@
 #!/usr/bin/env python3
-"""Entry program for make.fun news-image-20261123 (v1).
+"""news-image-20261123 entry (v1): publish the 23 November 2026 front page.
 
-Ships the finished front page (art.png, a 1024x1024 PNG drawn by
-news-image-20261123-poster.py) as the competition's entry image.
+The page itself lives in art.png next to this file: a 1024x1024 front
+page drawn by news-image-20261123-poster.py, 30 stories from 23
+November 2026. Running this program places a copy at
+$MAKEFUN_OUTPUT_DIR/entry.png (or /output/entry.png) after checking
+the bytes are a valid PNG inside the competition's limits, then reads
+the copy back and confirms the digest matches, so repeated runs agree.
 
-Running it copies art.png to $MAKEFUN_OUTPUT_DIR/entry.png, falling
-back to /output/entry.png. It validates the file first -- PNG magic,
-at most 1 MiB, at most 1024x1024 -- then reads the copy back and
-requires the SHA-256 to match, so the grader's two runs agree.
-
-Standard library only. No network, no clock, no randomness:
-identical input bytes give identical output bytes on every run.
+Only the standard library is used. No network, no clock, no random
+numbers: same input, same output, every run.
 """
 
 import hashlib
 import os
 import sys
 
-MAGIC = b"\x89PNG\r\n\x1a\n"
-LIMIT_BYTES = 1 << 20
-LIMIT_SIDE = 1024
+PNG_SIGNATURE = bytes([0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A])
+MAX_BYTES = 1024 * 1024
+MAX_EDGE = 1024
 
 
-def fail(message):
-    print("error:", message, file=sys.stderr)
+def die(reason):
+    sys.stderr.write("error: " + reason + "\n")
     return 1
 
 
-def dimensions(blob):
-    wide = int.from_bytes(blob[16:20], "big")
-    tall = int.from_bytes(blob[20:24], "big")
-    return wide, tall
+def png_size(data):
+    return (int.from_bytes(data[16:20], "big"),
+            int.from_bytes(data[20:24], "big"))
 
 
-def main():
-    # art.png verified at build time: 1024x1024, 184970 bytes,
-    # sha256 54a58a05f921c343935a81e4f3f2820dd42b8d0ef7939e4da07db91396e9f123
-    here = os.path.dirname(os.path.abspath(__file__))
-    src = os.path.join(here, "art.png")
+def run():
+    base = os.path.dirname(os.path.abspath(__file__))
     try:
-        with open(src, "rb") as handle:
-            blob = handle.read()
-    except OSError as exc:
-        return fail("cannot read art.png: %s" % exc)
+        with open(os.path.join(base, "art.png"), "rb") as f:
+            data = f.read()
+    except OSError as err:
+        return die("art.png unreadable: %s" % err)
 
-    if blob[:8] != MAGIC:
-        return fail("art.png is not a PNG file")
-    if len(blob) > LIMIT_BYTES:
-        return fail("art.png exceeds the 1 MiB limit")
-    wide, tall = dimensions(blob)
-    if wide > LIMIT_SIDE or tall > LIMIT_SIDE:
-        return fail("art.png exceeds the 1024x1024 limit")
+    if data[:8] != PNG_SIGNATURE:
+        return die("art.png is not a PNG")
+    if len(data) < 24:
+        return die("art.png is too small to hold a PNG header")
+    if len(data) > MAX_BYTES:
+        return die("art.png is over 1 MiB")
+    width, height = png_size(data)
+    if width > MAX_EDGE or height > MAX_EDGE:
+        return die("art.png is larger than 1024x1024")
 
-    out_dir = os.environ.get("MAKEFUN_OUTPUT_DIR", "/output")
-    os.makedirs(out_dir, exist_ok=True)
-    dest = os.path.join(out_dir, "entry.png")
-    with open(dest, "wb") as handle:
-        handle.write(blob)
-    with open(dest, "rb") as handle:
-        written = handle.read()
-    digest = hashlib.sha256(written).hexdigest()
-    if digest != hashlib.sha256(blob).hexdigest():
-        return fail("entry.png read back differs from art.png")
-    print("wrote %s (%d bytes, %dx%d, sha256 %s...)"
-          % (dest, len(blob), wide, tall, digest[:12]))
+    target_dir = os.environ.get("MAKEFUN_OUTPUT_DIR", "/output")
+    os.makedirs(target_dir, exist_ok=True)
+    target = os.path.join(target_dir, "entry.png")
+    with open(target, "wb") as f:
+        f.write(data)
+    with open(target, "rb") as f:
+        back = f.read()
+    digest = hashlib.sha256(data).hexdigest()
+    if hashlib.sha256(back).hexdigest() != digest:
+        return die("entry.png does not match art.png")
+    print("entry.png written: %d bytes (%d KiB), %dx%d, sha256 %s"
+          % (len(data), len(data) // 1024, width, height, digest[:12]))
     return 0
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    sys.exit(run())
